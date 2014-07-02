@@ -1,0 +1,12 @@
+K_{ij} & \sim NB( \mu_{ij}, \alpha_i )  \\
+\mu_{ij} &= s_{ij} q_{ij} \\
+\log q_{ij} &= \sum_r x_{jr} \beta_{ir} \\
+W &= \frac{\hat\beta_{ir}}{\widehat{\text{SE}}(\hat\beta_{ir})} \\
+\beta_i^c &= \vec{c}\,^t \vec{\beta_i} \\
+\text{SE}(\beta_i^c) &= \sqrt{\vec{c}\,^t \Sigma_i \vec{c}} \\
+\beta_{ir} & \sim N( 0, \sigma_r^2 ) \\
+\vec\beta_i &= \operatorname*{arg\,max}_{\vec\beta} \left( \sum_j \log
+  f_\text{NB}\left(K_{ij};\mu_j(\vec\beta),\alpha_i \right)
++ \Lambda(\vec\beta) \right) \\
+\mu_j(\vec\beta) &= s_{ij} e^{\sum_r x_{jr} \beta_r} \\
+\Lambda(\vec\beta) &= \sum_r \frac{- \beta_r^2}{2 \sigma_r^2} \\
