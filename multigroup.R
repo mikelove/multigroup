@@ -17,7 +17,7 @@ n <- 5 # samples per tissue
 
 tissues <- c("Blood","Brain","Heart","Lung","Muscle","Skin")
 
-for (i in seq_along(phenolist)) {
+for (i in seq_along(tissues)) {
   tissuecompare[[i]] <- as.character(head(pheno[pheno$SMTS == tissues[i]
                                                   & sequenced & ingenecounts,"cleanid"],n))
 }
@@ -45,30 +45,57 @@ dds <- DESeqDataSetFromMatrix(genecounts.sub[rowidx,],
                               ~ t)
 mcols(dds)$description <- genecounts$Description[rowidx]
 
-dds <- dds[1:1000,]
-dds <- DESeq(dds)
-res <- results(dds,name="tBlood")
-res <- results(dds,contrast=c("t","Brain","Blood"))
-res <- results(dds,contrast=list(c("tBlood","tBrain"),
-                     c("tHeart","tSkin","tLung","tMuscle")),
-               listValues=c(1/2,-1/4))
-resSort <- res[order(-res$stat),]
+# 1.5 min for 32k genes x 30 samples, 6 conditions
+system.time({dds <- DESeq(dds)})
 
-##
+# as we are looking at gene expression across donors,
+# we expect high within-condition variability for
+# some tissue specific genes. 
+# therefore Cook's cutoff (outlier detection) set to FALSE below
 
-gene <- rownames(resSort)[1]
-intercept <- coef(dds)[gene,1]
-cond <- coef(dds)[gene,-1]
-condSE <- coef(dds,SE=TRUE)[gene,-1]
-plotCounts(dds, gene, "t", transform=TRUE,
-           main=mcols(dds,use.names=TRUE)[gene,"description"])
+pdf("gtex_one.pdf",width=6,height=5)
+par(mar=c(5,5,1,1))
+res <- results(dds,name="tMuscle",lfcThreshold=1,cooksCutoff=FALSE)
+plotit(arrowcol=c("grey","grey","grey","grey","orange","grey"))
+dev.off()
+png("gtex_one_ma.png")
+plotMA(res,ylim=c(-10,10))
+dev.off()
 
-# draw the intercept and tissue specific fold changes
-abline(h=intercept, lwd=2, col="green", lty=2)
-x <- 1:6 + .1
-qn <- qnorm(.975)
-segments(x, intercept, x, intercept+cond, col="red", lwd=2)
-points(x, intercept+cond, col="red", lwd=2)
-arrows(x, intercept+cond, x, intercept+cond+qn*condSE, col="red", lwd=2, angle=90, length=.075)
-arrows(x, intercept+cond, x, intercept+cond-qn*condSE, col="red", lwd=2, angle=90, length=.075)
+pdf("gtex_contrast.pdf",width=6,height=5)
+par(mar=c(5,5,1,1))
+res <- results(dds,contrast=c("t","Heart","Muscle"),lfcThreshold=1,cooksCutoff=FALSE)
+plotit(c("grey","grey","orange","grey","dodgerblue","grey"))
+dev.off()
+png("gtex_contrast_ma.png")
+plotMA(res,ylim=c(-10,10))
+dev.off()
 
+pdf("gtex_contrast_2_4.pdf",width=6,height=5)
+par(mar=c(5,5,1,1))
+res <- results(dds,contrast=list(c("tHeart","tMuscle"),
+                     c("tBlood","tBrain","tLung","tSkin")),
+               listValues=c(1/2,-1/4),
+               lfcThreshold=1, cooksCutoff=FALSE)
+plotit(c("dodgerblue","dodgerblue","orange","dodgerblue","orange","dodgerblue"))
+dev.off()
+png("gtex_contrast_2_4_ma.png")
+plotMA(res,ylim=c(-10,10))
+dev.off()
+
+### draw the intercept and tissue specific fold changes
+plotit <- function(arrowcol) {
+  resSort <- res[order(-res$stat),]
+  gene <- rownames(resSort)[1]
+  intercept <- coef(dds)[gene,1]
+  cond <- coef(dds)[gene,-1]
+  condSE <- coef(dds,SE=TRUE)[gene,-1]
+  plotCounts(dds, gene, "t", transform=TRUE, main="")
+  abline(h=intercept, lwd=2, col="green", lty=2)
+  x <- 1:6 + .1
+  qn <- qnorm(.975)
+  segments(x, intercept, x, intercept+cond, col=arrowcol, lwd=2)
+  points(x, intercept+cond, col=arrowcol, lwd=2)
+  arrows(x, intercept+cond, x, intercept+cond+qn*condSE, col=arrowcol, lwd=2, angle=90, length=.075)
+  arrows(x, intercept+cond, x, intercept+cond-qn*condSE, col=arrowcol, lwd=2, angle=90, length=.075)
+}
