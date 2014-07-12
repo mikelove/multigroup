@@ -1,4 +1,4 @@
-# Multiple group comparisons in DESeq2 >= 1.4
+**Multiple group comparisons in DESeq2 >= 1.4**
 
 http://www.bioconductor.org/packages/release/bioc/html/DESeq2.html
 http://biorxiv.org/content/early/2014/05/27/002832
